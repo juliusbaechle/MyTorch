@@ -1,0 +1,1 @@
+conda create -n idp intelpython3_full pytest pytest-cov pytest-mock ipykernel numpy python=3.10
