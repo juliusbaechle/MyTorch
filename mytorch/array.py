@@ -44,8 +44,6 @@ class Array:
 
     def __init__(self, data, device : str | dpctl.SyclDevice = None, dtype : str = None):
         src_dtype = getattr(data, "dtype", "float32")
-        if isinstance(data, (tuple, list)) and len(data) and all(type(d) == type(data[0]) for d in data):
-            src_dtype = "float64" if type(data[0]) == float else "int64"
         if dtype is None:
             tgt_dtype = src_dtype
             if src_dtype == "float64":
@@ -114,8 +112,8 @@ class Array:
             return other, dev[dev.index(':') + 1:]
         return other, None
 
-    @classmethod
-    def _make_binary_op(cls, ufunc_name : str, reflect=False):
+    @staticmethod
+    def _make_binary_op(ufunc_name : str, reflect=False):
         def op(self : Array, other : Array | dp.ndarray):
             other_arr, other_dev = self._coerce_other(other)
             if other_dev is not None and other_dev != self.device:
@@ -132,16 +130,16 @@ class Array:
             return Array(result, device=self.device)
         return op
 
-    @classmethod
-    def _make_unary_op(cls, ufunc_name):
+    @staticmethod
+    def _make_unary_op(ufunc_name):
         def op(self : Array):
             func = getattr(dp, ufunc_name)
             result = func(self._array)
             return Array(result, device=self.device)
         return op
 
-    @classmethod
-    def _make_inplace_op(cls, ufunc_name):
+    @staticmethod
+    def _make_inplace_op(ufunc_name):
         def op(self : Array, other):
             other_arr, other_dev = self._coerce_other(other)            
             if other_dev is not None and other_dev != self.device:
@@ -211,7 +209,9 @@ class Array:
 
         device = devices.pop() if devices else self.device
         result = dp_func(*unpacked_args, **unpacked_kwargs)
-        if isinstance(result, dp.ndarray):
+        if isinstance(result, (dp.ndarray, np.ndarray)) and result.size == 1:
+            return result.asnumpy().item()
+        if isinstance(result, (dp.ndarray, np.ndarray)):
             return Array(result, device=device)
         return result
     
@@ -237,7 +237,9 @@ class Array:
 
         device = devices.pop() if devices else self.device
         result = func(*arrays, **kwargs)
-        if isinstance(result, dp.ndarray):
+        if isinstance(result, (dp.ndarray, np.ndarray)) and result.size == 1:
+            return result.asnumpy().item()
+        if isinstance(result, (dp.ndarray, np.ndarray)):
             return Array(result, device=device)
         return result
     
@@ -263,89 +265,89 @@ class Array:
         idx = coerce_index(idx)
         return self._array[idx]
 
-    @classmethod
-    def zeros(cls, shape, device="cpu", dtype="float32"):
+    @staticmethod
+    def zeros(shape, device="cpu", dtype="float32"):
         return Array(dp.zeros(shape, dtype=dtype, device=device))
     
-    @classmethod
-    def ones(cls, shape, device="cpu", dtype="float32"):
+    @staticmethod
+    def ones(shape, device="cpu", dtype="float32"):
         return Array(dp.ones(shape, dtype=dtype, device=device))
     
-    @classmethod
-    def empty(cls, shape, device="cpu", dtype="float32"):
+    @staticmethod
+    def empty(shape, device="cpu", dtype="float32"):
         return Array(dp.empty(shape, dtype=dtype, device=device))
 
-    @classmethod
-    def full(cls, shape, fill_value, device="cpu", dtype="float32"):
+    @staticmethod
+    def full(shape, fill_value, device="cpu", dtype="float32"):
         return Array(dp.full(shape, fill_value, dtype=dtype, device=device))
         
-    @classmethod
-    def arange(cls, start, end=None, step=1, device="cpu", dtype="float32"):
+    @staticmethod
+    def arange(start, end=None, step=1, device="cpu", dtype="float32"):
         return Array(dp.arange(start, end, step, dtype=dtype, device=device))
 
-    @classmethod
-    def linspace(cls, start, end=None, num=50, device="cpu", dtype="float32"):
+    @staticmethod
+    def linspace(start, end=None, num=50, device="cpu", dtype="float32"):
         return Array(dp.linspace(start, end, num, dtype=dtype, device=device))
 
-    @classmethod
-    def eye(cls, N, M=None, k=0, device="cpu", dtype="float32"):
+    @staticmethod
+    def eye(N, M=None, k=0, device="cpu", dtype="float32"):
         return Array(dp.eye(N, M, k, dtype=dtype, device=device))
 
-    @classmethod
-    def randn(cls, shape, device="cpu", dtype="float32"):
+    @staticmethod
+    def randn(shape, device="cpu", dtype="float32"):
         return Array(dp.random.randn(*shape), dtype=dtype, device=device)
     
-    @classmethod
-    def rand(cls, shape, device="cpu", dtype="float32"):
+    @staticmethod
+    def rand(shape, device="cpu", dtype="float32"):
         return Array(dp.random.rand(*shape), dtype=dtype, device=device)
     
-    @classmethod
-    def randint(cls, low, high, shape, device="cpu", dtype="int32"):
+    @staticmethod
+    def randint(low, high, shape, device="cpu", dtype="int32"):
         return Array(dp.random.randint(low, high, size=shape, dtype=dtype), device=device)
 
-    @classmethod
-    def tril(cls, x, k=0, device="cpu", dtype="float32"):
+    @staticmethod
+    def tril(x, k=0, device="cpu", dtype="float32"):
         return Array(dp.tril(x, k=k), device=device, dtype=dtype)
     
-    @classmethod
-    def triu(cls, x, k=0, device="cpu", dtype="float32"):
+    @staticmethod
+    def triu(x, k=0, device="cpu", dtype="float32"):
         return Array(dp.triu(x, k=k), device=device, dtype=dtype)
     
-    @classmethod
-    def zeros_like(cls, other, device=None, dtype=None):
+    @staticmethod
+    def zeros_like(other, device=None, dtype=None):
         device = device or other.device
         dtype = dtype or other.dtype
         return Array(dp.zeros_like(other._array, device=device, dtype=dtype))
     
-    @classmethod
-    def ones_like(cls, other, device=None, dtype=None):
+    @staticmethod
+    def ones_like(other, device=None, dtype=None):
         device = device or other.device
         dtype = dtype or other.dtype
         return Array(dp.ones_like(other._array, device=device, dtype=dtype))
     
-    @classmethod
-    def empty_like(cls, other, device=None, dtype=None):
+    @staticmethod
+    def empty_like(other, device=None, dtype=None):
         device = device or other.device
         dtype = dtype or other.dtype
         return Array(dp.empty_like(other._array, device=device, dtype=dtype))
     
-    @classmethod
-    def full_like(cls, other, fill_value, device=None, dtype=None):
+    @staticmethod
+    def full_like(other, fill_value, device=None, dtype=None):
         device = device or other.device
         dtype = dtype or other.dtype
         return Array(dp.full_like(other._array, fill_value, device=device, dtype=dtype))
 
-    @classmethod
-    def randn_like(cls, other, fill_value, device=None, dtype=None):
+    @staticmethod
+    def randn_like(other, device=None, dtype=None):
         device = device or other.device
         dtype = dtype or other.dtype
-        return Array(dp.randn_like(other._array, fill_value, device=device, dtype=dtype))
+        return Array(dp.randn_like(other._array, device=device, dtype=dtype))
 
-    @classmethod
-    def rand_like(cls, other, fill_value, device=None, dtype=None):
+    @staticmethod
+    def rand_like(other, device=None, dtype=None):
         device = device or other.device
         dtype = dtype or other.dtype
-        return Array(dp.rand_like(other._array, fill_value, device=device, dtype=dtype))
+        return Array(dp.rand_like(other._array, device=device, dtype=dtype))
 
 
 # Attach binary, unary, and inplace operations
