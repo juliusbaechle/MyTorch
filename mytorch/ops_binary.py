@@ -15,18 +15,26 @@ def _coerce_types(input, val, func_name):
         raise TypeError(f"{func_name}(): argument 'val' (position 2) must be a Tensor, not {type(val).__name__}")
     return input, val
 
+def _broadcast_tensors(input, val):
+    if input.shape != val.shape:
+        try:
+            broadcast_shape = np.broadcast_shapes(input.shape, val.shape)
+        except ValueError:
+            raise ValueError(f"operands could not be broadcast together with shapes {input.shape} and {val.shape}")
+        input = input.broadcast_to(broadcast_shape)
+        val = val.broadcast_to(broadcast_shape)
+    return input, val
+
 def add(input, val):
     input, val = _coerce_types(input, val, "add")
-    input._check_broadcast(input, val)
+    input, val = _broadcast_tensors(input, val)
     out_data = input.data + val.data
 
     def _add_backward(grad):
         if input.requires_grad:
-            input_grad = input._broadcasted_grad_accumulate(input.shape, grad)
-            input._add_grad(input_grad)
+            input._add_grad(grad)
         if val.requires_grad:
-            val_grad = input._broadcasted_grad_accumulate(val.shape, grad)
-            val._add_grad(val_grad)
+            val._add_grad(grad)
 
     out_requires_grad = (input.requires_grad or val.requires_grad) and Tensor._build_graph
     return Tensor(out_data,
@@ -37,18 +45,14 @@ def add(input, val):
 
 def mul(input, val):
     input, val = _coerce_types(input, val, "mul")
-    input._check_broadcast(input, val)
+    input, val = _broadcast_tensors(input, val)
     out_data = input.data * val.data
 
     def _mul_backward(grad):
         if input.requires_grad:
-            input_grad = grad * val.data
-            input_grad = input._broadcasted_grad_accumulate(input.shape, input_grad)
-            input._add_grad(input_grad)
+            input._add_grad(grad * val.data)
         if val.requires_grad:
-            val_grad = grad * input.data
-            val_grad = input._broadcasted_grad_accumulate(val.shape, val_grad)
-            val._add_grad(val_grad)
+            val._add_grad(grad * input.data)
 
     out_requires_grad = (input.requires_grad or val.requires_grad) and Tensor._build_graph
     return Tensor(out_data,
@@ -59,9 +63,9 @@ def mul(input, val):
 
 def matmul(input : Tensor, val : Tensor):
     if not isinstance(input, Tensor):
-        raise TypeError(f"matmul(): argument 'input' (position 1) must be a Tensor, not {type(input)}")
+        raise TypeError(f"matmul(): argument 'input' (position 1) must be a Tensor, not {type(input).__name__}")
     if not isinstance(val, Tensor):
-        raise TypeError(f"matmul(): argument 'val' (position 2) must be a Tensor, not {type(val)}")
+        raise TypeError(f"matmul(): argument 'val' (position 2) must be a Tensor, not {type(val).__name__}")
     
     out_data = input.data @ val.data
     
@@ -81,18 +85,16 @@ def matmul(input : Tensor, val : Tensor):
                     device=input.device)
 
 def divide(input, val):
-    input, val = _coerce_types(input, val, "divide")
-    input._check_broadcast(input, val)
+    input, val = _coerce_types(input, val, "divide")    
+    input, val = _broadcast_tensors(input, val)
     out_data = input.data / val.data
 
     def _truediv_backward(grad):
         if input.requires_grad:
             input_grad = grad / val.data
-            input_grad = input._broadcasted_grad_accumulate(input.shape, input_grad)
             input._add_grad(input_grad)
         if val.requires_grad:
             val_grad = -grad * input.data / val.data ** 2
-            val_grad = input._broadcasted_grad_accumulate(val.shape, val_grad)
             val._add_grad(val_grad)
 
     out_requires_grad = (input.requires_grad or val.requires_grad) and Tensor._build_graph

@@ -64,20 +64,6 @@ class Tensor:
     def to(self, device):
         self.data = self.data.to(device)
         return self
-    
-    @staticmethod
-    def _check_broadcast(a, b):
-        if (len(a.shape) != len(b.shape)) and (a.requires_grad and b.requires_grad):
-            raise ValueError(f"Incompatible operation between {a.shape} and {b.shape}")
-
-    def _broadcasted_grad_accumulate(self, x_shape, x_grad):
-        grad_shape = x_grad.shape
-        assert len(x_shape) == len(grad_shape)
-
-        sum_axes = [idx for idx, (x_dim, grad_dim) in enumerate(zip(x_shape, grad_shape)) if x_dim == 1 and grad_dim != 1]
-        if sum_axes:
-            x_grad = np.sum(x_grad, axis=tuple(sum_axes), keepdims=True)
-        return x_grad
 
     def _add_grad(self, grad):
         if self.grad is None:
@@ -160,12 +146,12 @@ class Tensor:
 
         out_data = self.data[idx]
 
-        def _getitem_backward(other_grad):
+        def _getitem_backward(grad):
             if self.requires_grad:
                 assert np.unique(idx).size == len(idx)
-                grad_self = Array.zeros_like(self.data)
-                grad_self[idx] = other_grad
-                self._add_grad(grad_self)
+                self_grad = Array.zeros_like(self.data)
+                self_grad[idx] = grad
+                self._add_grad(self_grad)
 
         out_requires_grad = self.requires_grad and Tensor._build_graph
         return Tensor(out_data,
@@ -184,11 +170,11 @@ class Tensor:
     def permute(self, *dims):
         out_data = np.transpose(self.data, axes=dims)
 
-        def _permute_backward(other_grad):
+        def _permute_backward(grad):
             if self.requires_grad:
                 inverse_dims = np.argsort(dims)  # (2, 0, 1) -> (1, 2, 0)
-                grad_self = np.transpose(other_grad, axes=inverse_dims)
-                self._add_grad(grad_self)
+                self_grad = np.transpose(grad, axes=inverse_dims)
+                self._add_grad(self_grad)
 
         out_requires_grad = self.requires_grad and Tensor._build_graph
         return Tensor(out_data,
@@ -208,20 +194,38 @@ class Tensor:
     def reshape(self, *shape):
         out_data = self.data.reshape(shape)
 
-        def _reshape_backward(other_grad):
+        def _reshape_backward(grad):
             if self.requires_grad:
-                grad_self = other_grad.reshape(self.shape)
-                self._add_grad(grad_self)
+                self_grad = grad.reshape(self.shape)
+                self._add_grad(self_grad)
 
         out_requires_grad = self.requires_grad and Tensor._build_graph
-        output = Tensor(out_data,
+        return Tensor(out_data,
                         requires_grad=out_requires_grad,
                         grad_fn=_reshape_backward if out_requires_grad else None,
+                        parents=self if out_requires_grad else None,
                         device=self.device)
+    
+    def broadcast_to(self, shape):
+        if self.shape == shape:
+            return self
         
-        if out_requires_grad:
-            output._set_parents(self)
-        return output
+        out_data = np.broadcast_to(self.data, shape)
+
+        def _broadcast_backward(grad): 
+            if self.requires_grad:
+                added_axes = tuple(i for i in range(grad.ndim - self.ndim))
+                self_grad = grad.sum(axis=added_axes, keepdims=False)
+                expanded_axes = tuple(i for i in range(self_grad.ndim) if self_grad.shape[i] != self.shape[i])
+                self_grad = self_grad.sum(axis=expanded_axes, keepdims=True)
+                self._add_grad(self_grad)
+
+        out_requires_grad = self.requires_grad and Tensor._build_graph
+        return Tensor(out_data,
+                        requires_grad=out_requires_grad,
+                        grad_fn=_broadcast_backward if out_requires_grad else None,
+                        parents=self if out_requires_grad else None,
+                        device=self.device)
     
     def flatten(self, start_dim=0, end_dim=-1):
         start_dim %= self.data.ndim
@@ -258,13 +262,13 @@ class Tensor:
             idx[dim] = slice(start, end)
             out_data = self.data[tuple(idx)]
 
-            def _chunk_backward(other_grad, start=start, end=end):
+            def _chunk_backward(grad, start=start, end=end):
                 if self.requires_grad:
-                    grad = Array.zeros_like(self.data)
-                    grad_idx = [slice(None)] * grad.ndim
+                    self_grad = Array.zeros_like(self.data)
+                    grad_idx = [slice(None)] * self.ndim
                     grad_idx[dim] = slice(start, end)
-                    grad[tuple(grad_idx)] = other_grad
-                    self._add_grad(grad)
+                    self_grad[tuple(grad_idx)] = grad
+                    self._add_grad(self_grad)
 
             out_requires_grad = self.requires_grad and Tensor._build_graph
             output = Tensor(out_data,
@@ -295,10 +299,10 @@ class Tensor:
     def masked_fill(self, mask, value):
         out_data = np.where(mask.data, value, self.data)
 
-        def _masked_fill_backward(other_grad):
+        def _masked_fill_backward(grad):
             if self.requires_grad:
-                grad_self = np.where(mask.data, 0, other_grad)
-                self._add_grad(grad_self)
+                self_grad = np.where(mask.data, 0, grad)
+                self._add_grad(self_grad)
 
         out_requires_grad = self.requires_grad and Tensor._build_graph
         return Tensor(out_data,
@@ -312,14 +316,14 @@ class Tensor:
         if descending:
             out_data = np.flip(out_data, axis=dim)
 
-        def _sort_backward(other_grad):
+        def _sort_backward(grad):
             if self.requires_grad:
                 sorted_indices = np.argsort(self.data, axis=dim)
                 if descending:
                     sorted_indices = np.flip(sorted_indices, axis=dim)
-                grad_self = np.zeros_like(self.data)
-                np.put_along_axis(grad_self, sorted_indices, other_grad, axis=dim)
-                self._add_grad(grad_self)
+                self_grad = np.zeros_like(self.data)
+                np.put_along_axis(self_grad, sorted_indices, grad, axis=dim)
+                self._add_grad(self_grad)
 
         out_requires_grad = self.requires_grad and Tensor._build_graph
         return Tensor(out_data,

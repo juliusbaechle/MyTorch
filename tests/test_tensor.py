@@ -14,21 +14,21 @@ def test_properties():
 
 def test_add():
     t1 = Tensor([1, 2, 3], True)
-    t2 = Tensor([1], True)
+    t2 = Tensor([1, 1, 1], True)
     res = t1 + t2
     assert np.allclose(res.data, Array([2, 3, 4]))
     res.grad_fn(Array([1, 1, 1]))
-    assert np.allclose(t2.grad, Array([3]))
+    assert np.allclose(t2.grad, Array([1, 1, 1]))
     assert np.allclose(t1.grad, Array([1, 1, 1]))
 
 def test_mul():
     t1 = Tensor([1, 2, 3], True)
-    t2 = Tensor([2], True)
+    t2 = Tensor([2, 2, 2], True)
     res = t1 * t2
     assert np.allclose(res.data, Array([2, 4, 6]))
     res.grad_fn(Array([1, 1, 1]))
     assert np.allclose(t1.grad, Array([2, 2, 2]))
-    assert np.allclose(t2.grad, Array([6]))
+    assert np.allclose(t2.grad, Array([1, 2, 3]))
 
 def test_matmul():
     t1 = Tensor([[1, 2]], True)
@@ -41,12 +41,12 @@ def test_matmul():
 
 def test_truediv():
     t1 = Tensor([2, 4, 6], True)
-    t2 = Tensor([2], True)
+    t2 = Tensor([2, 2, 2], True)
     res = t1 / t2
     assert np.allclose(res.data, Array([1, 2, 3]))
     res.grad_fn(Array([1, 1, 1]))
     assert np.allclose(t1.grad, Array([0.5, 0.5, 0.5]))
-    assert np.allclose(t2.grad, Array([-3]))
+    assert np.allclose(t2.grad, Array([-0.5, -1, -1.5]))
 
 def test_pow():
     t1 = Tensor([np.e, np.e], True)
@@ -238,3 +238,9 @@ def test_stack():
 def test_zeros():
     res = mytorch.zeros((2, 3), device="cpu")
     assert np.allclose(res.data, Array([[0, 0, 0], [0, 0, 0]]))
+
+def test_broadcast():
+    t1 = Tensor([[[1, 2]], [[3, 4]], [[5, 6]]], True)
+    res = t1.broadcast_to((2, 3, 2, 2))
+    res.grad_fn(Array.ones(res.shape))
+    assert np.allclose(t1.grad, Array([[[4, 4]], [[4, 4]], [[4, 4]]]))
