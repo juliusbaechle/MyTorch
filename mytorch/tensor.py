@@ -140,144 +140,16 @@ class Tensor:
     
     ### INDEXING / RESHAPING ###
 
-    def __getitem__(self, idx):
-        if isinstance(idx, Tensor):
-            idx = idx.data
-
-        out_data = self.data[idx]
-
-        def _getitem_backward(grad):
-            if self.requires_grad:
-                assert np.unique(idx).size == len(idx)
-                self_grad = Array.zeros_like(self.data)
-                self_grad[idx] = grad
-                self._add_grad(self_grad)
-
-        out_requires_grad = self.requires_grad and Tensor._build_graph
-        return Tensor(out_data,
-                        requires_grad=out_requires_grad,
-                        grad_fn=_getitem_backward if out_requires_grad else None,
-                        parents=(self,) if out_requires_grad else None,
-                        device=self.device)
-    
-    def __setitem__(self, idx, value):
-        if isinstance(idx, Tensor):
-            idx = idx.data
-        if isinstance(value, Tensor):
-            value = value.data
-        self.data[idx] = value
-    
-    def permute(self, *dims):
-        out_data = np.transpose(self.data, axes=dims)
-
-        def _permute_backward(grad):
-            if self.requires_grad:
-                inverse_dims = np.argsort(dims)  # (2, 0, 1) -> (1, 2, 0)
-                self_grad = np.transpose(grad, axes=inverse_dims)
-                self._add_grad(self_grad)
-
-        out_requires_grad = self.requires_grad and Tensor._build_graph
-        return Tensor(out_data,
-                        requires_grad=out_requires_grad,
-                        grad_fn=_permute_backward if out_requires_grad else None,
-                        parents=(self,) if out_requires_grad else None,
-                        device=self.device)
-
-    def transpose(self, dim1=-1, dim2=-2):
-        axes = list(range(self.ndim))
-        dim1 %= self.ndim
-        dim2 %= self.ndim
-        axes[dim1] = dim2
-        axes[dim2] = dim1
-        return self.permute(*axes)
-
-    def reshape(self, *shape):
-        out_data = self.data.reshape(shape)
-
-        def _reshape_backward(grad):
-            if self.requires_grad:
-                self_grad = grad.reshape(self.shape)
-                self._add_grad(self_grad)
-
-        out_requires_grad = self.requires_grad and Tensor._build_graph
-        return Tensor(out_data,
-                        requires_grad=out_requires_grad,
-                        grad_fn=_reshape_backward if out_requires_grad else None,
-                        parents=self if out_requires_grad else None,
-                        device=self.device)
-    
-    def broadcast_to(self, shape):
-        if self.shape == shape:
-            return self
-        
-        out_data = np.broadcast_to(self.data, shape)
-
-        def _broadcast_backward(grad): 
-            if self.requires_grad:
-                added_axes = tuple(i for i in range(grad.ndim - self.ndim))
-                self_grad = grad.sum(axis=added_axes, keepdims=False)
-                expanded_axes = tuple(i for i in range(self_grad.ndim) if self_grad.shape[i] != self.shape[i])
-                self_grad = self_grad.sum(axis=expanded_axes, keepdims=True)
-                self._add_grad(self_grad)
-
-        out_requires_grad = self.requires_grad and Tensor._build_graph
-        return Tensor(out_data,
-                        requires_grad=out_requires_grad,
-                        grad_fn=_broadcast_backward if out_requires_grad else None,
-                        parents=self if out_requires_grad else None,
-                        device=self.device)
-    
-    def flatten(self, start_dim=0, end_dim=-1):
-        start_dim %= self.data.ndim
-        end_dim %= self.data.ndim
-        new_shape = self.shape[:start_dim] + (-1,) + self.shape[end_dim+1:]
-        return self.reshape(*new_shape)
-    
-    def squeeze(self, dim = None):
-        if dim is None:
-            new_shape = tuple(s for s in self.shape if s != 1)
-        else:
-            dim %= self.data.ndim
-            if self.shape[dim] != 1:
-                raise ValueError(f"Cannot squeeze dimension {dim} with size {self.shape[dim]}")
-            new_shape = self.shape[:dim] + self.shape[dim+1:]
-        return self.reshape(*new_shape)
-    
-    def unsqueeze(self, dim = 0):
-        dim %= self.data.ndim + 1
-        new_shape = self.shape[:dim] + (1,) + self.shape[dim:]
-        return self.reshape(*new_shape)
-    
-    def chunk(self, chunks, dim=0):
-        dim %= self.data.ndim
-        size = self.shape[dim]
-        if size % chunks != 0:
-            raise ValueError(f"Cannot split dimension of size {size} into {chunks} chunks")
-        chunk_size = size // chunks
-
-        out_tensors = []
-        for i in range(chunks):
-            start, end = i*chunk_size, (i+1)*chunk_size
-            idx = [slice(None)] * self.ndim
-            idx[dim] = slice(start, end)
-            out_data = self.data[tuple(idx)]
-
-            def _chunk_backward(grad, start=start, end=end):
-                if self.requires_grad:
-                    self_grad = Array.zeros_like(self.data)
-                    grad_idx = [slice(None)] * self.ndim
-                    grad_idx[dim] = slice(start, end)
-                    self_grad[tuple(grad_idx)] = grad
-                    self._add_grad(self_grad)
-
-            out_requires_grad = self.requires_grad and Tensor._build_graph
-            output = Tensor(out_data,
-                            requires_grad=out_requires_grad,
-                            grad_fn=_chunk_backward if out_requires_grad else None,
-                            parents=(self,) if out_requires_grad else None,
-                            device=self.device)            
-            out_tensors.append(output)
-        return out_tensors
+    def __getitem__(self, idx): ...        
+    def __setitem__(self, idx, value): ...
+    def permute(self, *dims): ...
+    def transpose(self, dim1=-1, dim2=-2): ...
+    def reshape(self, *shape): ...
+    def broadcast_to(self, shape): ...    
+    def flatten(self, start_dim=0, end_dim=-1): ...    
+    def squeeze(self, dim = None): ...
+    def unsqueeze(self, dim = 0): ...
+    def chunk(self, chunks, dim=0): ...
     
     ### REDUCTIONS ###
 
@@ -296,57 +168,9 @@ class Tensor:
     
     ### OTHER OPS ###
 
-    def masked_fill(self, mask, value):
-        out_data = np.where(mask.data, value, self.data)
-
-        def _masked_fill_backward(grad):
-            if self.requires_grad:
-                self_grad = np.where(mask.data, 0, grad)
-                self._add_grad(self_grad)
-
-        out_requires_grad = self.requires_grad and Tensor._build_graph
-        return Tensor(out_data,
-                        requires_grad=out_requires_grad,
-                        grad_fn=_masked_fill_backward if out_requires_grad else None,
-                        parents=(self,) if out_requires_grad else None,
-                        device=self.device)
-    
-    def sort(self, dim=-1, descending=False):
-        out_data = np.sort(self.data, axis=dim)
-        if descending:
-            out_data = np.flip(out_data, axis=dim)
-
-        def _sort_backward(grad):
-            if self.requires_grad:
-                sorted_indices = np.argsort(self.data, axis=dim)
-                if descending:
-                    sorted_indices = np.flip(sorted_indices, axis=dim)
-                self_grad = np.zeros_like(self.data)
-                np.put_along_axis(self_grad, sorted_indices, grad, axis=dim)
-                self._add_grad(self_grad)
-
-        out_requires_grad = self.requires_grad and Tensor._build_graph
-        return Tensor(out_data,
-                        requires_grad=out_requires_grad,
-                        grad_fn=_sort_backward if out_requires_grad else None,
-                        parents=(self,) if out_requires_grad else None,
-                        device=self.device)
-    
-    def argsort(self, dim=-1, descending=False):
-        out_data = np.argsort(self.data, axis=dim)
-        if descending:
-            out_data = np.flip(out_data, axis=dim)
-
-        def _argsort_backward(input_grad):
-            if self.requires_grad:
-                return Array.zeros_like(self.data)
-
-        out_requires_grad = self.requires_grad and Tensor._build_graph
-        return Tensor(out_data,
-                        requires_grad=out_requires_grad,
-                        grad_fn=_argsort_backward if out_requires_grad else None,
-                        parents=(self,) if out_requires_grad else None,
-                        device=self.device)
+    def masked_fill(self, mask, value): ...    
+    def sort(self, dim=-1, descending=False): ...
+    def argsort(self, dim=-1, descending=False): ...
     
     def item(self):
         if self.size != 1:
@@ -393,3 +217,20 @@ Tensor.mean = mean
 Tensor.var = var
 Tensor.max = max
 Tensor.min = min
+
+from .ops_shape import *
+Tensor.__getitem__ = get_item
+Tensor.__setitem__ = set_item
+Tensor.permute = permute
+Tensor.transpose = transpose
+Tensor.reshape = reshape
+Tensor.broadcast_to = broadcast_to
+Tensor.flatten = flatten
+Tensor.squeeze = squeeze
+Tensor.unsqueeze = unsqueeze
+Tensor.chunk = chunk
+
+from .ops_other import *
+Tensor.masked_fill = masked_fill
+Tensor.sort = sort
+Tensor.argsort = argsort
