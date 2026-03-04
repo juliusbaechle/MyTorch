@@ -1,4 +1,4 @@
-from .tensor import Tensor
+from ..tensor import Tensor
 import numpy as np
 
 def _coerce_types(input, val, func_name):

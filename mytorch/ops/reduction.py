@@ -1,5 +1,5 @@
-from .tensor import Tensor
-from .array import Array
+from ..tensor import Tensor
+from ..array import Array
 import numpy as np
 
 def sum(input, dim=None, keepdims=False):

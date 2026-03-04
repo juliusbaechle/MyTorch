@@ -191,13 +191,13 @@ class Tensor:
     def __len__(self):
         return self.shape[0]
 
-from .ops_binary import *
+from .ops.binary import *
 Tensor.__add__ = add
 Tensor.__mul__ = mul
 Tensor.__matmul__ = matmul
 Tensor.__truediv__ = divide
 
-from .ops_unary import *
+from .ops.unary import *
 Tensor.__pow__ = pow
 Tensor.sin = sin
 Tensor.cos = cos
@@ -207,10 +207,10 @@ Tensor.log = log
 Tensor.abs = abs
 Tensor.clamp = clamp
 
-from .ops_repr import *
+from .ops.repr import *
 Tensor.__repr__ = tensor2string
 
-from .ops_reduction import *
+from .ops.reduction import *
 Tensor.sum = sum
 Tensor.cumsum = cumsum
 Tensor.mean = mean
@@ -218,7 +218,7 @@ Tensor.var = var
 Tensor.max = max
 Tensor.min = min
 
-from .ops_shape import *
+from .ops.shape import *
 Tensor.__getitem__ = get_item
 Tensor.__setitem__ = set_item
 Tensor.permute = permute
@@ -230,7 +230,7 @@ Tensor.squeeze = squeeze
 Tensor.unsqueeze = unsqueeze
 Tensor.chunk = chunk
 
-from .ops_other import *
+from .ops.other import *
 Tensor.masked_fill = masked_fill
 Tensor.sort = sort
 Tensor.argsort = argsort
