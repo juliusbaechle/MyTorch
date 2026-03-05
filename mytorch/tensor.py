@@ -3,6 +3,7 @@ import numpy as np
 import weakref
 from functools import wraps
 from contextlib import contextmanager
+from .topo_sort import build_topo
 from mytorch.array import Array
 from mytorch.dtypes import *
 
@@ -20,8 +21,8 @@ class Tensor:
         self.requires_grad = requires_grad
         self.grad_fn = grad_fn
         self.grad = None
-        self._is_leaf = self.requires_grad and (self.grad_fn is None)
-        self._parents = self._set_parents(parents)
+        self._is_leaf = requires_grad and (grad_fn is None)
+        self._set_parents(parents)
 
     @property
     def dtype(self):
@@ -53,7 +54,7 @@ class Tensor:
 
     @property
     def is_leaf(self):
-        return self._is_leaf 
+        return self._is_leaf
     
     @classmethod
     def build_graph_enabled(cls):
@@ -77,6 +78,22 @@ class Tensor:
             parents = (parents)
         if parents is not None:
             self._parents = tuple(weakref.ref(p) for p in parents if p is not None)
+
+    def backward(self, grad=None, retain_graph=False):
+        if grad is None:
+            grad = Array.ones_like(self.data, dtype=self.dtype, device=self.device)
+        self.grad = grad
+
+        topo = build_topo(self)
+        for t in reversed(topo):
+            if t.grad_fn is not None:
+                t.grad_fn(t.grad)
+
+                if not retain_graph:
+                    t.grad_fn = None
+                    t._parents = None
+                    if not t.is_leaf:
+                        t.grad = None
 
     ### BINARY OPS ###
 
