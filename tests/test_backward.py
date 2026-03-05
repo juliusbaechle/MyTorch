@@ -7,6 +7,7 @@ def test_backward():
     c = b - 1 # [1, 3]
     d = c.sum() # [4]
     d.backward()
+    
     assert np.allclose(a.grad, Array([2, 2], "gpu:0"))
     for t in [b, c, d]: # check for memory leaks
         assert t.grad_fn is None
@@ -18,6 +19,7 @@ def test_backward_retain_graph():
     c = b - 1 # [1, 3]
     d = c.sum() # [4]
     d.backward(retain_graph=True)
+
     assert np.allclose(a.grad, Array([2, 2], "gpu:0"))
     for t in [b, c, d]:
         assert t.grad_fn is not None
