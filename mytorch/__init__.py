@@ -1,5 +1,6 @@
 from .factory import *
 from .visualize import build_graph, plot_graph
 from .topo_sort import build_topo
-from .ops import *
+from .no_grad import no_grad
+from .tensor_ops import *
 from .tensor import Tensor

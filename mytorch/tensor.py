@@ -1,8 +1,6 @@
 from __future__ import annotations
 import numpy as np
 import weakref
-from functools import wraps
-from contextlib import contextmanager
 from .topo_sort import build_topo
 from mytorch.array import Array
 from mytorch.dtypes import *
@@ -210,13 +208,13 @@ class Tensor:
     def __len__(self):
         return self.shape[0]
 
-from .ops.binary import *
+from .tensor_ops.binary import *
 Tensor.__add__ = add
 Tensor.__mul__ = mul
 Tensor.__matmul__ = matmul
 Tensor.__truediv__ = divide
 
-from .ops.unary import *
+from .tensor_ops.unary import *
 Tensor.__pow__ = pow
 Tensor.sin = sin
 Tensor.cos = cos
@@ -227,10 +225,10 @@ Tensor.abs = abs
 Tensor.clamp = clamp
 Tensor.sigmoid = sigmoid
 
-from .ops.repr import *
+from .tensor_ops.repr import *
 Tensor.__repr__ = tensor2string
 
-from .ops.reduction import *
+from .tensor_ops.reduction import *
 Tensor.sum = sum
 Tensor.cumsum = cumsum
 Tensor.mean = mean
@@ -238,7 +236,7 @@ Tensor.var = var
 Tensor.max = max
 Tensor.min = min
 
-from .ops.shape import *
+from .tensor_ops.shape import *
 Tensor.__getitem__ = get_item
 Tensor.__setitem__ = set_item
 Tensor.permute = permute
@@ -250,7 +248,7 @@ Tensor.squeeze = squeeze
 Tensor.unsqueeze = unsqueeze
 Tensor.chunk = chunk
 
-from .ops.other import *
+from .tensor_ops.other import *
 Tensor.masked_fill = masked_fill
 Tensor.sort = sort
 Tensor.argsort = argsort
