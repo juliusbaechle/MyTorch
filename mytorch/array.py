@@ -295,15 +295,15 @@ class Array:
 
     @staticmethod
     def randn(shape, device="cpu", dtype="float32"):
-        return Array(dp.random.randn(*shape), dtype=dtype, device=device)
+        return Array(np.random.randn(*shape), dtype=dtype, device=device)
     
     @staticmethod
     def rand(shape, device="cpu", dtype="float32"):
-        return Array(dp.random.rand(*shape), dtype=dtype, device=device)
+        return Array(np.random.rand(*shape), dtype=dtype, device=device)
     
     @staticmethod
     def randint(low, high, shape, device="cpu", dtype="int32"):
-        return Array(dp.random.randint(low, high, size=shape, dtype=dtype), device=device)
+        return Array(np.random.randint(low, high, size=shape, dtype=dtype), device=device)
 
     @staticmethod
     def tril(x, k=0, device="cpu", dtype="float32"):
@@ -341,13 +341,19 @@ class Array:
     def randn_like(other, device=None, dtype=None):
         device = device or other.device
         dtype = dtype or other.dtype
-        return Array(dp.randn_like(other._array, device=device, dtype=dtype))
+        return Array(np.random.randn(*other.shape), device=device, dtype=dtype)
 
     @staticmethod
     def rand_like(other, device=None, dtype=None):
         device = device or other.device
         dtype = dtype or other.dtype
-        return Array(dp.rand_like(other._array, device=device, dtype=dtype))
+        return Array(np.random.rand(*other.shape), device=device, dtype=dtype)
+    
+    @staticmethod
+    def randint_like(other, device=None, dtype=None):
+        device = device or other.device
+        dtype = dtype or other.dtype
+        return Array(np.random.randint(*other.shape), device=device, dtype=dtype)
 
 
 # Attach binary, unary, and inplace operations
