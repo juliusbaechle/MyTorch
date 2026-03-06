@@ -60,8 +60,6 @@ def build_graph(topo_order):
 
         for parent_ref in getattr(t, "_parents", ()):
             parent = parent_ref()
-            if parent is None:
-                continue
             parent_id = id(parent)
             parent_name, _ = id_to_name[parent_id]
 
@@ -152,3 +150,17 @@ def plot_graph(G):
     plt.tight_layout(rect=[0, 0, 1, 1])
     plt.tight_layout()
     plt.show()
+
+def print_topo(topo : list):
+    ids = [id(t) for t in topo]
+    for i, t in enumerate(topo):
+        if t.grad_fn:
+            name = clean_op_name(t.grad_fn.__name__)
+        else:
+            name = "Param" if t.requires_grad else "Leaf"
+        
+        parents = []
+        for p in t._parents:
+            index = ids.index(id(p()))
+            parents.append(index)
+        print(f"{i}: {name} {t.shape} {parents}")
