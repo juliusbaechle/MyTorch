@@ -14,7 +14,7 @@ def masked_fill(self, mask, value):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_masked_fill_backward if out_requires_grad else None,
-                    parents=(self,) if out_requires_grad else None,
+                    parents=(self,) if out_requires_grad else (),
                     device=self.device)
 
 def sort(self, dim=-1, descending=False):
@@ -35,7 +35,7 @@ def sort(self, dim=-1, descending=False):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_sort_backward if out_requires_grad else None,
-                    parents=(self,) if out_requires_grad else None,
+                    parents=(self,) if out_requires_grad else (),
                     device=self.device)
 
 def argsort(self, dim=-1, descending=False):
@@ -51,7 +51,7 @@ def argsort(self, dim=-1, descending=False):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_argsort_backward if out_requires_grad else None,
-                    parents=(self,) if out_requires_grad else None,
+                    parents=(self,) if out_requires_grad else (),
                     device=self.device)
 
 def concatenate(tensors, dim=0):
@@ -75,7 +75,7 @@ def concatenate(tensors, dim=0):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_concat_backward if out_requires_grad else None,
-                    parents=tensors if out_requires_grad else None,
+                    parents=tensors if out_requires_grad else (),
                     device=tensors[0].device)
 
 def stack(tensors, dim=0):
@@ -96,5 +96,5 @@ def stack(tensors, dim=0):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_stack_backward if out_requires_grad else None,
-                    parents=tensors if out_requires_grad else None,
+                    parents=tensors if out_requires_grad else (),
                     device=tensors[0].device)

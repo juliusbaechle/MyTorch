@@ -14,7 +14,7 @@ class Tensor:
                  grad_fn=None,
                  device=None, 
                  dtype=None,
-                 parents=None):
+                 parents=()):
         self._data = Array(data, device, dtype)
         self.requires_grad = requires_grad
         self.grad_fn = grad_fn
@@ -54,6 +54,11 @@ class Tensor:
     def is_leaf(self):
         return self._is_leaf
     
+    def item(self):
+        if self.size > 1:
+            raise RuntimeError("Item only works for size 1")
+        return self.data._array.item()
+
     @classmethod
     def build_graph_enabled(cls):
         return cls._build_graph
@@ -73,9 +78,8 @@ class Tensor:
 
     def _set_parents(self, parents):
         if not isinstance(parents, (list, tuple)):
-            parents = (parents)
-        if parents is not None:
-            self._parents = tuple(weakref.ref(p) for p in parents if p is not None)
+            parents = (parents,)
+        self._parents = tuple(weakref.ref(p) for p in parents)
 
     def backward(self, grad=None, retain_graph=False):
         if grad is None:
@@ -83,13 +87,13 @@ class Tensor:
         self.grad = grad
 
         topo = build_topo(self)
-        for t in reversed(topo):
+        for i, t in enumerate(reversed(topo)):
             if t.grad_fn is not None:
                 t.grad_fn(t.grad)
 
                 if not retain_graph:
                     t.grad_fn = None
-                    t._parents = None
+                    t._parents = ()
                     if not t.is_leaf:
                         t.grad = None
 

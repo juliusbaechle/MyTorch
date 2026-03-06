@@ -40,7 +40,7 @@ def add(input, val):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_add_backward if out_requires_grad else None,
-                    parents=(input, val) if out_requires_grad else None,
+                    parents=(input, val) if out_requires_grad else (),
                     device=input.device)
 
 def mul(input, val):
@@ -58,7 +58,7 @@ def mul(input, val):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_mul_backward if out_requires_grad else None,
-                    parents=(input, val) if out_requires_grad else None,
+                    parents=(input, val) if out_requires_grad else (),
                     device=input.device)
 
 def matmul(input : Tensor, val : Tensor):
@@ -81,7 +81,7 @@ def matmul(input : Tensor, val : Tensor):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_matmul_backward if out_requires_grad else None,
-                    parents=(input, val) if out_requires_grad else None,
+                    parents=(input, val) if out_requires_grad else (),
                     device=input.device)
 
 def divide(input, val):
@@ -101,5 +101,5 @@ def divide(input, val):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_truediv_backward if out_requires_grad else None,
-                    parents=(input, val) if out_requires_grad else None,
+                    parents=(input, val) if out_requires_grad else (),
                     device=input.device)

@@ -14,7 +14,7 @@ def sum(input, dim=None, keepdims=False):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_sum_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
 
 def cumsum(input, dim=None):
@@ -31,7 +31,7 @@ def cumsum(input, dim=None):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_cumsum_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
 
 def mean(input, dim=None, keepdims=False):
@@ -52,7 +52,7 @@ def mean(input, dim=None, keepdims=False):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_mean_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
 
 def var(input, dim=None, keepdims=False):
@@ -75,7 +75,7 @@ def var(input, dim=None, keepdims=False):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_var_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
 
 def _max_min(input, dim=None, keepdims=False, is_max=True):
@@ -99,7 +99,7 @@ def _max_min(input, dim=None, keepdims=False, is_max=True):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
 
 def max(input, dim=None, keepdims=False):

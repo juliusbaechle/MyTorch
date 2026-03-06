@@ -19,7 +19,7 @@ def get_item(input, idx):
     return Tensor(output,
                     requires_grad=out_requires_grad,
                     grad_fn=_getitem_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
 
 def set_item(input, idx, value):
@@ -42,7 +42,7 @@ def permute(input, *dims):
     return Tensor(output,
                     requires_grad=out_requires_grad,
                     grad_fn=_permute_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
 
 def transpose(input, dim1=-1, dim2=-2):
@@ -65,7 +65,7 @@ def reshape(input, *shape):
     return Tensor(output,
                     requires_grad=out_requires_grad,
                     grad_fn=_reshape_backward if out_requires_grad else None,
-                    parents=input if out_requires_grad else None,
+                    parents=input if out_requires_grad else (),
                     device=input.device)
 
 def broadcast_to(input, shape):
@@ -86,7 +86,7 @@ def broadcast_to(input, shape):
     return Tensor(output,
                     requires_grad=out_requires_grad,
                     grad_fn=_broadcast_backward if out_requires_grad else None,
-                    parents=input if out_requires_grad else None,
+                    parents=input if out_requires_grad else (),
                     device=input.device)
 
 def flatten(input, start_dim=0, end_dim=-1):
@@ -136,7 +136,7 @@ def chunk(input, chunks, dim=0):
         output = Tensor(output,
                         requires_grad=out_requires_grad,
                         grad_fn=_chunk_backward if out_requires_grad else None,
-                        parents=(input,) if out_requires_grad else None,
+                        parents=(input,) if out_requires_grad else (),
                         device=input.device)            
         out_tensors.append(output)
     return out_tensors

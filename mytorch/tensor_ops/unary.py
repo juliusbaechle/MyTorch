@@ -20,7 +20,7 @@ def pow(input, exponent):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_pow_backward if out_requires_grad else None,
-                    parents=(input, exponent) if out_requires_grad else None,
+                    parents=(input, exponent) if out_requires_grad else (),
                     device=input.device)
 
 def sin(input : Tensor):
@@ -35,7 +35,7 @@ def sin(input : Tensor):
     return Tensor(output,
             requires_grad=out_requires_grad,
             grad_fn=_sin_backward if out_requires_grad else None,
-            parents=input if out_requires_grad else None,
+            parents=input if out_requires_grad else (),
             device=input.device)
 
 def cos(input : Tensor):
@@ -50,7 +50,7 @@ def cos(input : Tensor):
     return Tensor(output,
             requires_grad=out_requires_grad,
             grad_fn=_cos_backward if out_requires_grad else None,
-            parents=input if out_requires_grad else None,
+            parents=input if out_requires_grad else (),
             device=input.device)
 
 def tan(input : Tensor):
@@ -65,7 +65,7 @@ def tan(input : Tensor):
     return Tensor(output,
             requires_grad=out_requires_grad,
             grad_fn=_tan_backward if out_requires_grad else None,
-            parents=input if out_requires_grad else None,
+            parents=input if out_requires_grad else (),
             device=input.device)
 
 def exp(input):
@@ -80,7 +80,7 @@ def exp(input):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_exp_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
 
 def log(input):
@@ -95,7 +95,7 @@ def log(input):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_log_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
 
 def abs(input):
@@ -110,7 +110,7 @@ def abs(input):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_abs_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
 
 def clamp(input, min_val = None, max_val = None):
@@ -129,7 +129,7 @@ def clamp(input, min_val = None, max_val = None):
     return Tensor(out_data,
                     requires_grad=out_requires_grad,
                     grad_fn=_clamp_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
 
 def sigmoid(input):
@@ -144,5 +144,5 @@ def sigmoid(input):
     return Tensor(output,
                     requires_grad=out_requires_grad,
                     grad_fn=_sigmoid_backward if out_requires_grad else None,
-                    parents=(input,) if out_requires_grad else None,
+                    parents=(input,) if out_requires_grad else (),
                     device=input.device)
