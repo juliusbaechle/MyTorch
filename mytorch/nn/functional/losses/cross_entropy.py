@@ -5,6 +5,7 @@ def cross_entropy(logits : Tensor, targets : Tensor):
     max = np.max(logits.data, axis=-1, keepdims=True)
     exp = np.exp(logits.data - max)
     softmax = exp / exp.sum(axis=-1, keepdims=True)
+    
     loss = np.sum(targets.data * softmax, axis=-1)
     loss = np.mean(-np.log(loss), axis=-1)
 

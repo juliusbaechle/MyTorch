@@ -70,6 +70,7 @@ class Tensor:
         return self
 
     def _add_grad(self, grad):
+        assert grad.shape == self.shape
         if self.grad is None:
             self.grad = grad
         else:

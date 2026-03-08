@@ -11,12 +11,12 @@ class Linear(Module):
         self.out_features = out_features
         self.use_bias = bias
 
-        self.weight = mytorch.zeros((out_features, in_features), True)
+        self.weight = mytorch.zeros((out_features, in_features), True, device, dtype)
         k = math.sqrt(1 / in_features)
         init.uniform_(self.weight, -k, k)
 
         if self.use_bias:
-            self.bias = mytorch.zeros((out_features,), True)
+            self.bias = mytorch.zeros((out_features,), True, device, dtype)
             init.uniform_(self.bias)
         else:
             self.bias=None

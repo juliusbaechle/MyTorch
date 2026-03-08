@@ -11,7 +11,7 @@ class SGD(Optimizer):
             g = p.grad
             
             if self.weight_decay != 0.0:
-                g = g + self.weight_decay * p.data
+                g += self.weight_decay * p.data._array
             
             p.data -= self.lr * g
     
