@@ -1,0 +1,7 @@
+{
+    "python.testing.pytestArgs": [
+        "--cov-config=.coveragerc"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}
