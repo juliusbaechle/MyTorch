@@ -2,6 +2,7 @@ from mytorch.tensor import Tensor
 from mytorch.array import Array
 import numpy as np
 import mytorch
+import pytest
 
 def test_properties():
     tensor = Tensor([1, 2, 3], True, device="gpu:0")
@@ -47,6 +48,21 @@ def test_truediv():
     res.grad_fn(Array([1, 1, 1]))
     assert np.allclose(t1.grad, Array([0.5, 0.5, 0.5]))
     assert np.allclose(t2.grad, Array([-0.5, -1, -1.5]))
+
+def test_coerce_types():
+    t1 = Tensor([1, 2, 3], True)
+    assert np.allclose((1 + t1).data, Array([2, 3, 4]))
+    assert np.allclose(mytorch.add(1, 2).data, Array([3]))
+    with pytest.RaisesExc(TypeError):
+        mytorch.add([1, 2], 1)
+    with pytest.RaisesExc(TypeError):
+        mytorch.add(Tensor([1, 2]), [1, 2])
+
+def test_broadcast_tensors_fails():
+    t1 = Tensor([1, 2, 3], True)
+    t2 = Tensor([[1, 2], [3, 4]])
+    with pytest.RaisesExc(ValueError):
+        mytorch.add(t1, t2)
 
 def test_pow():
     t1 = Tensor([np.e, np.e], True)
@@ -197,6 +213,13 @@ def test_max_scalar():
     res.grad_fn(Array([1]))
     assert np.allclose(t1.grad, Array([[0, 0], [0, 1]]))
 
+def test_min_scalar():
+    t1 = Tensor([[1, 2], [3, 4]], True)
+    res = t1.min()
+    assert np.allclose(res.data, Array([1]))
+    res.grad_fn(Array([1]))
+    assert np.allclose(t1.grad, Array([[1, 0], [0, 0]]))
+
 def test_argmax():
     t1 = Tensor([[1, 2], [3, 4]], True)
     res = t1.argmax(dim=1)
@@ -211,9 +234,9 @@ def test_masked_fill():
     assert np.allclose(t1.grad, Array([[0, 1], [1, 0]]))
 
 def test_sort():
-    t1 = Tensor([[3, 1], [4, 2]], True)
-    res = t1.sort(dim=1)
-    assert np.allclose(res.data, Array([[1, 3], [2, 4]]))
+    t1 = Tensor([[1, 3], [2, 4]], True)
+    res = t1.sort(dim=1, descending=True)
+    assert np.allclose(res.data, Array([[3, 1], [4, 2]]))
     res.grad_fn(Array([[0, 1], [0, 1]]))
     assert np.allclose(t1.grad, Array([[1, 0], [1, 0]]))
 
@@ -225,6 +248,8 @@ def test_concat():
     res.grad_fn(Array([[1, 1], [2, 2]]))
     assert np.allclose(t1.grad, Array([[1, 1]]))
     assert np.allclose(t2.grad, Array([[2, 2]]))
+    with pytest.RaisesExc(ValueError):
+        mytorch.concatenate([])
 
 def test_stack():
     t1 = Tensor([1, 2], True)
@@ -234,6 +259,13 @@ def test_stack():
     res.grad_fn(Array([[1, 1], [2, 2]]))
     assert np.allclose(t1.grad, Array([1, 1]))
     assert np.allclose(t2.grad, Array([2, 2]))
+    with pytest.RaisesExc(ValueError):
+        mytorch.stack([])
+
+def test_argsort():
+    t1 = Tensor([1, 3, 2, 4])
+    res = t1.argsort(descending=True)
+    assert np.allclose(res.data, Array([3, 1, 2, 0]))
 
 def test_zeros():
     res = mytorch.zeros((2, 3), device="cpu")
@@ -244,3 +276,9 @@ def test_broadcast():
     res = t1.broadcast_to((2, 3, 2, 2))
     res.grad_fn(Array.ones(res.shape))
     assert np.allclose(t1.grad, Array([[[4, 4]], [[4, 4]], [[4, 4]]]))
+
+def test_tensor2string():
+    t = Tensor([[1, 2], [3, 4]], True, grad_fn=test_tensor2string, device="gpu:0", dtype="int32")
+    res = mytorch.tensor2string(t)
+    assert res == f"tensor([[1 2]\n" \
+                   "        [3 4]], grad_fn=test_tensor2string, device=gpu:0)"
