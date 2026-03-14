@@ -1,3 +1,10 @@
+import os
+os.environ["SYCL_PI_LEVEL_ZERO_SYNC"] = "1"
+#os.environ["SYCL_PI_TRACE"] = "2"
+
+import faulthandler
+faulthandler.enable()
+
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[2]))
@@ -36,7 +43,7 @@ sgd = mytorch.SGD(model.parameters(), 0.001)
 scheduler = mytorch.MultiStepLR(sgd, [6, 8], 0.1)
 
 
-import tqdm
+
 from mnist_dataset import MnistDatset
 from data_loader import DataLoader
 
@@ -44,8 +51,11 @@ NUM_EPOCHS = 10
 BATCH_SIZE = 500
 
 train_dataset = MnistDatset("benchmarks\\mnist\\dataset", True)
-train_loader = DataLoader(train_dataset, BATCH_SIZE, DEVICE)
+train_loader = DataLoader(train_dataset, BATCH_SIZE, device=DEVICE)
 
+
+
+import tqdm
 
 for epoch in range(NUM_EPOCHS):
     pbar = tqdm.tqdm(train_loader, desc=f"Epoch {epoch}")
@@ -53,10 +63,10 @@ for epoch in range(NUM_EPOCHS):
     for X, y in pbar:
         logits = model.forward(X.reshape(-1, 784))
         loss = F.cross_entropy(logits, F.onehot(y, 10))
-        pbar.set_postfix(loss=loss.item())
+        pbar.set_postfix(loss="%.5f" % loss.item())
 
         sgd.zero_grad()
-        loss.backward(retain_graph=True)
+        loss.backward()
         sgd.step()
     
     scheduler.step()
@@ -64,9 +74,7 @@ for epoch in range(NUM_EPOCHS):
 
 
 test_dataset = MnistDatset("benchmarks\\mnist\\dataset", False)
-test_loader = DataLoader(test_dataset, BATCH_SIZE, DEVICE)
-
-import numpy as np
+test_loader = DataLoader(test_dataset, BATCH_SIZE, device=DEVICE)
 
 num_correct = 0
 for X, y in tqdm.tqdm(test_loader):
@@ -74,6 +82,6 @@ for X, y in tqdm.tqdm(test_loader):
         logits = model.forward(X.reshape(-1, 784))
         prediction = logits.argmax(dim=1)
         prediction = prediction == y
-        num_correct += np.sum(prediction.data)
+        num_correct += prediction.sum()
 
 print(100 * num_correct / len(test_dataset))
