@@ -42,7 +42,7 @@ class Array:
         "__invert__": "invert",
     }
 
-    def __init__(self, data, device : str | dpctl.SyclDevice = None, dtype : str = None):
+    def __init__(self, data, device = None, dtype : str = None):
         src_dtype = getattr(data, "dtype", "float32")
         if dtype is None:
             tgt_dtype = src_dtype
@@ -114,7 +114,7 @@ class Array:
 
     @staticmethod
     def _make_binary_op(ufunc_name : str, reflect=False):
-        def op(self : Array, other : Array | dp.ndarray):
+        def op(self, other):
             other_arr, other_dev = self._coerce_other(other)
             if other_dev is not None and other_dev != self.device:
                 raise RuntimeError(f"Expected all arrays to be on the "
