@@ -282,7 +282,7 @@ class Array:
         return Array(dp.full(shape, fill_value, dtype=dtype, device=device))
         
     @staticmethod
-    def arange(start, end=None, step=1, device="cpu", dtype="float32"):
+    def arange(start, end=None, step=1, device="cpu", dtype="int32"):
         return Array(dp.arange(start, end, step, dtype=dtype, device=device))
 
     @staticmethod
