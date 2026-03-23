@@ -88,7 +88,7 @@ class Tensor:
         self.grad = grad
 
         topo = build_topo(self)
-        for i, t in enumerate(reversed(topo)):
+        for t in reversed(topo):
             if t.grad_fn is not None:
                 t.grad_fn(t.grad)
 

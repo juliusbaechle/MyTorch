@@ -58,7 +58,7 @@ def reshape(input, *shape):
 
     def _reshape_backward(grad):
         if input.requires_grad:
-            input_grad = grad.reshape(input.shape)
+            input_grad = np.reshape(grad, input.shape)
             input._add_grad(input_grad)
 
     out_requires_grad = input.requires_grad and Tensor._build_graph

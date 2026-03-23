@@ -1,5 +1,4 @@
 import dpnp as dp
-import numpy as np
 import mytorch
 from mytorch import Array
 import mytorch.nn.functional as F
