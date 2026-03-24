@@ -1,7 +1,7 @@
 import os
 import gzip
 import numpy as np
-from dataset import Dataset
+from mytorch.utils.dataset import Dataset
 
 class MnistDatset(Dataset):
     def __init__(self, dataset_folder: str, train : bool):

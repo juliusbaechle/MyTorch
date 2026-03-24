@@ -5,3 +5,4 @@ from .no_grad import no_grad
 from .tensor_ops import *
 from .tensor import Tensor
 from .optim import *
+from .utils import *

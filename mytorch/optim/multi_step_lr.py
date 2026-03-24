@@ -1,9 +1,8 @@
 from .scheduler import LRScheduler
 from .base_optimizer import Optimizer
-from typing import List
 
 class MultiStepLR(LRScheduler):
-    def __init__(self, optimizer : Optimizer, milestones : List[int], gamma : float):
+    def __init__(self, optimizer : Optimizer, milestones : list[int], gamma : float):
         super().__init__(optimizer)
         self.milestones = milestones
         self.gamma = gamma
@@ -16,6 +15,6 @@ class MultiStepLR(LRScheduler):
     def step(self):
         self.step_count += 1
         exponent = 0
-        while exponent < len(self.milestones) and self.step_count >= self.milestones[exponent]:
+        while self.step_count >= self.milestones[exponent]:
             exponent += 1
         self.optimizer.lr = self.initial_lr * self.gamma ** exponent
