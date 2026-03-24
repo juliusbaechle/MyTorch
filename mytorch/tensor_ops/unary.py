@@ -1,4 +1,5 @@
 from ..tensor import Tensor
+from ..array import Array
 import numpy as np
 
 def pow(input, exponent):
@@ -14,7 +15,7 @@ def pow(input, exponent):
             input._add_grad(grad_input)
         if exponent.requires_grad:
             grad_exponent = grad * input.data ** exponent.data * np.log(input.data)
-            exponent._add_grad(grad_exponent.sum())
+            exponent._add_grad(Array(grad_exponent.sum()))
 
     out_requires_grad = (input.requires_grad or exponent.requires_grad) and Tensor._build_graph
     return Tensor(out_data,
@@ -146,3 +147,23 @@ def sigmoid(input):
                     grad_fn=_sigmoid_backward if out_requires_grad else None,
                     parents=(input,) if out_requires_grad else (),
                     device=input.device)
+
+def softmax(input, dim=-1):
+    # subtract max for numerical stability
+    shifted = input.data - input.data.max(axis=dim, keepdims=True)
+    exp_x = np.exp(shifted)
+    output = exp_x / exp_x.sum(axis=dim, keepdims=True)
+
+    def _softmax_backward(grad):
+        if input.requires_grad:
+            # dot each sample's grad with its softmax output, summed along dim
+            dot = (grad * output).sum(axis=dim, keepdims=True)
+            grad_input = output * (grad - dot)
+            input._add_grad(grad_input)
+
+    out_requires_grad = input.requires_grad and Tensor._build_graph
+    return Tensor(output,
+                  requires_grad=out_requires_grad,
+                  grad_fn=_softmax_backward if out_requires_grad else None,
+                  parents=(input,) if out_requires_grad else (),
+                  device=input.device)

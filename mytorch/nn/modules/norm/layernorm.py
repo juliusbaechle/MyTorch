@@ -43,8 +43,7 @@ class LayerNorm(Module):
             x_reshaped,
             self.weight,
             self.bias,
-            eps=self.eps,
-            training=self.training
+            eps=self.eps
         )
 
         # Reshape back to original

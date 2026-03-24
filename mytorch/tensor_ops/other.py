@@ -60,7 +60,7 @@ def concatenate(tensors, dim=0):
             if t.requires_grad:
                 grad_idx = [slice(None)] * out_data.ndim
                 grad_idx[dim] = slice(offset, offset + size)
-                t._add_grad(grad[tuple(grad_idx)])
+                t._add_grad(Array(grad[tuple(grad_idx)]))
             offset += size
 
     out_requires_grad = any(t.requires_grad for t in tensors) and Tensor._build_graph
@@ -82,7 +82,7 @@ def stack(tensors, dim=0):
             if t.requires_grad:
                 grad_idx = [slice(None)] * out_data.ndim
                 grad_idx[dim] = i
-                t._add_grad(grad[tuple(grad_idx)])
+                t._add_grad(Array(grad[tuple(grad_idx)]))
 
     out_requires_grad = any(t.requires_grad for t in tensors) and Tensor._build_graph
     return Tensor(out_data,

@@ -1,4 +1,5 @@
 from mytorch import Tensor
+import numpy as np
 
 def linear(input : Tensor, weight : Tensor, bias : Tensor = None) -> Tensor:
     output = input.data @ weight.data.T
@@ -7,10 +8,12 @@ def linear(input : Tensor, weight : Tensor, bias : Tensor = None) -> Tensor:
     
     def _linear_backward(grad):
         if weight.requires_grad:
-            weight_grad = (input.data.T @ grad).T
+            inp_2d = np.reshape(input.data, [-1, input.data.shape[-1]])
+            grad_2d = np.reshape(grad, [-1, grad.shape[-1]])
+            weight_grad = (inp_2d.T @ grad_2d).T
             weight._add_grad(weight_grad)
-        if bias.requires_grad:
-            bias_grad = grad.sum(axis=0)
+        if bias is not None and bias.requires_grad:
+            bias_grad = np.sum(grad, axis=tuple(range(grad.ndim - 1)))
             bias._add_grad(bias_grad)
         if input.requires_grad:
             grad_input = grad @ weight.data

@@ -10,7 +10,7 @@ def get_item(input, idx):
 
     def _getitem_backward(grad):
         if input.requires_grad:
-            assert np.unique(idx).size == len(idx)
+            # assert np.unique(idx).size == len(idx)
             input_grad = Array.zeros_like(input.data)
             input_grad[idx] = grad
             input._add_grad(input_grad)
@@ -77,9 +77,9 @@ def broadcast_to(input, shape):
     def _broadcast_backward(grad): 
         if input.requires_grad:
             added_axes = tuple(i for i in range(grad.ndim - input.ndim))
-            input_grad = grad.sum(axis=added_axes, keepdims=False)
+            input_grad = np.sum(grad, axis=added_axes, keepdims=False)
             expanded_axes = tuple(i for i in range(input_grad.ndim) if input_grad.shape[i] != input.shape[i])
-            input_grad = input_grad.sum(axis=expanded_axes, keepdims=True)
+            input_grad = np.sum(input_grad, axis=expanded_axes, keepdims=True)
             input._add_grad(input_grad)
 
     out_requires_grad = input.requires_grad and Tensor._build_graph
@@ -140,3 +140,8 @@ def chunk(input, chunks, dim=0):
                         device=input.device)            
         out_tensors.append(output)
     return out_tensors
+
+def unbind(input, dim=0):
+    dim %= input.data.ndim
+    size = input.shape[dim]
+    return [squeeze(c, dim) for c in chunk(input, size, dim)]

@@ -71,10 +71,10 @@ def matmul(input : Tensor, val : Tensor):
     
     def _matmul_backward(grad):
         if input.requires_grad:
-            grad_input = grad @ val.data.T
+            grad_input = grad @ np.swapaxes(val.data, -1, -2)
             input._add_grad(grad_input)
         if val.requires_grad:
-            grad_val = input.data.T @ grad
+            grad_val = np.swapaxes(input.data, -1, -2) @ grad
             val._add_grad(grad_val)
 
     out_requires_grad = (input.requires_grad or val.requires_grad) and Tensor._build_graph

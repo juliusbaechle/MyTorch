@@ -71,6 +71,7 @@ class Tensor:
 
     def _add_grad(self, grad):
         assert grad.shape == self.shape
+        assert type(grad) is Array
         if self.grad is None:
             self.grad = grad
         else:
@@ -80,7 +81,7 @@ class Tensor:
     def _set_parents(self, parents):
         if not isinstance(parents, (list, tuple)):
             parents = (parents,)
-        self._parents = tuple(weakref.ref(p) for p in parents)
+        self._parents = tuple(weakref.ref(p) for p in parents if p is not None)
 
     def backward(self, grad=None, retain_graph=False):
         if grad is None:
@@ -131,6 +132,7 @@ class Tensor:
     def clamp(self, min_val = None, max_val = None): ...
     
     def sigmoid(self): ...
+    def softmax(self): ...
 
     def _compare(self, other, op):
         other_data = other.data if isinstance(other, Tensor) else other
@@ -172,6 +174,7 @@ class Tensor:
     def squeeze(self, dim = None): ...
     def unsqueeze(self, dim = 0): ...
     def chunk(self, chunks, dim=0): ...
+    def unbind(self, dim=0): ...
     
     ### REDUCTIONS ###
 
@@ -229,6 +232,7 @@ Tensor.log = log
 Tensor.abs = abs
 Tensor.clamp = clamp
 Tensor.sigmoid = sigmoid
+Tensor.softmax = softmax
 
 from .tensor_ops.repr import *
 Tensor.__repr__ = tensor2string
@@ -252,6 +256,7 @@ Tensor.flatten = flatten
 Tensor.squeeze = squeeze
 Tensor.unsqueeze = unsqueeze
 Tensor.chunk = chunk
+Tensor.unbind = unbind
 
 from .tensor_ops.other import *
 Tensor.masked_fill = masked_fill
